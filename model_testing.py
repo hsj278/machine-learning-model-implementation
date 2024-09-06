@@ -13,20 +13,26 @@ import Logistic_Regression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import mean_squared_error, accuracy_score
 import Decision_Tree
+from sklearn.datasets import load_iris
 
 parser = argparse.ArgumentParser(description="Choose which model you want to test")
 parser.add_argument('-m', '--model', type=str, help='model you want to use')
 args = parser.parse_args()
 
 regressions = ['linear_regression','regression_tree']
-classifications = ['logistic_regression','decision_tree']
+classifications = ['logistic_regression']
+decision_tree = ['decision_tree']
 
 if args.model in regressions:
     X, y = make_regression(n_samples=1000, n_features=10, noise=20)
 elif args.model in classifications:
     X, y = make_classification(n_samples=1000, n_features=10, n_classes=2, random_state=20)
+elif args.model in decision_tree:
+    iris = load_iris()
+    X, y = iris.data, iris.target
     
 # Split data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -95,8 +101,21 @@ elif args.model == 'logistic_regression':
     print(Log_class_report)
     
 elif args.model == 'decision_tree':
-    custom_tree = Decision_Tree.DecisionTree(max_depth=10, regression=False)
+    custom_tree = Decision_Tree.DecisionTree(max_depth=10)#, regression=False, threshold_method='unique')
+    custom_tree.fit(X_train, y_train)
     
+    custom_pred = custom_tree.predict(X_test)
+
+    DT_tree = DecisionTreeClassifier(max_depth=10, random_state=42)
+    DT_tree.fit(X_train, y_train)
+    
+    DT_pred = DT_tree.predict(X_test)
+    
+    custom_accuracy = accuracy_score(y_test, custom_pred)
+    DT_accuracy = accuracy_score(y_test, DT_pred)
+    
+    print(f"Custom accuracy: {custom_accuracy}")
+    print(f"DecisionTreeClassifier accuracy: {DT_accuracy}")
     
 elif args.model == 'regression_tree':
     custom_tree = Decision_Tree.DecisionTree(max_depth=10, regression=True, threshold_method='unique')
