@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_error
 import Decision_Tree
 from sklearn.datasets import load_iris
 
@@ -22,17 +22,17 @@ parser = argparse.ArgumentParser(description="Choose which model you want to tes
 parser.add_argument('-m', '--model', type=str, help='model you want to use')
 args = parser.parse_args()
 
-regressions = ['linear_regression','regression_tree']
-classifications = ['logistic_regression']
-decision_tree = ['decision_tree']
+regressions = ['linear_regression','regression_tree','random_forest_reg']
+classifications = ['logistic_regression','decision_tree','random_forest_cls']
+#decision_tree = ['decision_tree']
 
 if args.model in regressions:
-    X, y = make_regression(n_samples=1000, n_features=10, noise=20)
+    X, y = make_regression(n_samples=1000, n_features=10, noise=0.1, random_state=42)
 elif args.model in classifications:
     X, y = make_classification(n_samples=1000, n_features=10, n_classes=2, random_state=20)
-elif args.model in decision_tree:
-    iris = load_iris()
-    X, y = iris.data, iris.target
+# elif args.model in decision_tree:
+#     iris = load_iris()
+#     X, y = iris.data, iris.target
     
 # Split data into training and testing
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -133,3 +133,42 @@ elif args.model == 'regression_tree':
     
     print(f"Custom MSE: {custom_mse}")
     print(f"DecisionTreeRegressor MSE: {mse}")
+    
+elif args.model == 'random_forest_cls':
+    import Random_Forest
+    from sklearn.tree import DecisionTreeClassifier
+    from sklearn.ensemble import RandomForestClassifier
+    
+    custom_forest = Random_Forest.RandomForest(n_tree=10, max_depth=5, n_features=5)
+    custom_forest.fit(X_train, y_train)
+    custom_pred = custom_forest.predict(X_test)
+    
+    RF = RandomForestClassifier(n_estimators=10, max_depth=5, max_features=5, random_state=42)
+    RF.fit(X_train,y_train)
+    RF_pred = RF.predict(X_test)
+        
+    custom_accuracy = accuracy_score(y_test, custom_pred)
+    RF_accuracy = accuracy_score(y_test, RF_pred)
+    
+    print(f'Custom accuracy: {custom_accuracy}')
+    print(f'Random Forest accuracy: {RF_accuracy}')
+    
+elif args.model == 'random_forest_reg':
+    import Random_Forest
+    from sklearn.tree import DecisionTreeRegressor
+    from sklearn.ensemble import RandomForestRegressor
+    
+    custom_forest = Random_Forest.RandomForest(n_tree=10, max_depth=5, n_features=5, regression=True)
+    custom_forest.fit(X_train, y_train)
+    custom_pred = custom_forest.predict(X_test)
+    
+    RF = RandomForestRegressor(n_estimators=10, max_depth=5, max_features=5, random_state=42)
+    RF.fit(X_train,y_train)
+    RF_pred = RF.predict(X_test)
+        
+    custom_accuracy = mean_squared_error(y_test, custom_pred)
+    RF_accuracy = mean_squared_error(y_test, RF_pred)
+    
+    print(f'Custom MSE: {custom_accuracy}')
+    print(f'Random Forest MSE: {RF_accuracy}')
+    
