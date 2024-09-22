@@ -24,7 +24,7 @@ class LinearRegression():
         #TODO: implement other initialization methods 
         if self.init_method == 'random_normal':
             self.weights = np.random.randn(n_features)
-        else:
+        elif self.init_method == 'zeros':
             self.weights = np.zeros(n_features)
         self.bias = 0
     
@@ -32,22 +32,29 @@ class LinearRegression():
     def _compute_loss(self, y, y_pred):
         #Mean Squared Error
         if self.loss_function == 'MSE':
-            if self.regularization == 'L1':
-                loss = np.mean((y-y_pred)**2) + self.alpha*np.sum(np.absolute(self.weights))
-            elif self.regularization == 'L2':
-                loss = np.mean((y-y_pred)**2) + self.alpha*np.sum(np.square(self.weights))
-            elif self.regularization == 'EN':
-                loss = np.mean((y-y_pred)**2) + self.alpha*(self.beta*np.sum(np.absolute(self.weights)) + (1-self.beta)*np.sum(np.square(self.weights)))
             loss = np.mean((y-y_pred)**2)
+
+            if self.regularization == 'L1':
+                loss += self.alpha*np.sum(np.absolute(self.weights))
+            elif self.regularization == 'L2':
+                loss -= self.alpha*np.sum(np.square(self.weights))
+            elif self.regularization == 'EN':
+                loss += self.alpha*(self.beta*np.sum(np.absolute(self.weights)) + (1-self.beta)*np.sum(np.square(self.weights)))
         #Root Mean Squared Error
         elif self.loss_function == 'RMSE':
             loss = np.sqrt(np.mean((y - y_pred)**2))
-        
+
+            if self.regularization == 'L1':
+                loss += self.alpha*np.sum(np.absolute(self.weights))
+            elif self.regularization == 'L2':
+                loss += self.alpha*np.sum(np.square(self.weights))
+            elif self.regularization == 'EN':
+                loss += self.alpha*(self.beta*np.sum(np.absolute(self.weights)) + (1-self.beta)*np.sum(np.square(self.weights)))
+                
         return loss
     
     #TODO: Regularization list and loss function list
-    
-    #TODO: implement other regularization methods like elastic net
+    #TODO: implement other regularization methods
     def _apply_regularization(self, gradient):
         if self.regularization == 'L1':
             return gradient + self.alpha * np.sign(self.weights)
@@ -57,14 +64,23 @@ class LinearRegression():
             return gradient + self.alpha * (self.beta*np.sign(self.weights) + (1 - self.beta)*self.weights)
         return gradient
             
-    def GradientDescent(self, X, y):
-        n_samples = len(y)
+    def GradientDescent(self, X, y, sample_weight):
+        #Sample weight is used for boosting methods
+        if sample_weight is not None:
+            sum_weights = np.sum(sample_weight)
+        else:
+            sum_weights = len(y)
+        
         
         for _ in range(self.iterations):
             y_pred = np.dot(X, self.weights) + self.bias
+            res =  y - y_pred
 
-            dw = -(2/n_samples) * np.dot(X.T, (y - y_pred))  
-            db = -(2/n_samples) * np.sum(y - y_pred) 
+            if sample_weight is not None:
+                res = sample_weight * res
+            
+            dw = -(2/sum_weights) * np.dot(X.T, res)  
+            db = -(2/sum_weights) * np.sum(res) 
             
             dw = self._apply_regularization(dw)
                     
@@ -74,12 +90,12 @@ class LinearRegression():
             
         return self.weights, self.bias
     
-    def fit(self, X, y):
+    def fit(self, X, y, sample_weight = None): #Sample weight to be used with boosting methods
         n_samples, n_features = X.shape
         
         self._init_wb(n_features)
         if self.fit_method == 'GD':
-            self.weights, self.bias = self.GradientDescent(X, y)
+            self.weights, self.bias = self.GradientDescent(X, y, sample_weight)
         
     def predict(self, X):
         return np.dot(X, self.weights) + self.bias

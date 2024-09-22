@@ -94,7 +94,9 @@ class DecisionTree():
         right_subtree = self._build_tree(X[right_idx, :], y[right_idx], depth + 1)
         return Node(feature=feature, threshold=threshold, left=left_subtree, right=right_subtree)
     
-    def fit(self, X, y):
+    def fit(self, X, y, sample_weight=None):
+        if sample_weight is None:
+            sample_weight = np.ones(len(y))/len(y)
         self.root = self._build_tree(X, y)
         
     def _predict_sample(self, sample, node):
